@@ -5,7 +5,7 @@ package main
 	и возвращения карты со словами и числом, указывающем, сколько раз они
 	употребляются. Функция должна конвертировать текст в нижний регистр и
 	обрезать знаки препинания. Используйте пакет strings. Функции, которые
-	пригодятся для выполнения данного задания: Fields, ToLower и Trim.
+	пригодятся для выполнения данного задания: Fields, ToLower и Trim. Использовать горутины
 */
 
 import (
@@ -27,51 +27,66 @@ func main() {
 
 	intervalLength := len(wordsSlice) / 3
 
-	var wordsMap map[string]int
+	wordsMap := make(map[string]int)
 
+	var wg sync.WaitGroup
 
-	wg := new(sync.WaitGroup)
+	wg.Add(3)
+	var mux sync.Mutex
 
-	go countWords1(wordsMap,intervalLength, newSlice, wg)
-	go countWords2(wordsMap,intervalLength, newSlice, wg)
-	go countWords3(wordsMap,intervalLength, newSlice, wg)
+	go countWords1(wordsMap,intervalLength, newSlice, &wg, &mux)
+	go countWords2(wordsMap,intervalLength, newSlice, &wg, &mux)
+	go countWords3(wordsMap,intervalLength, newSlice, &wg, &mux)
 
 	wg.Wait()
 
 	fmt.Println(wordsMap)
 }
 
-func countWords1(myMap map[string]int, interval int, slice []string, wg *sync.WaitGroup){
-	wg.Add(1)
+func countWords1(myMap map[string]int, interval int, slice []string, wg *sync.WaitGroup, mux *sync.Mutex) map[string]int{
+
 	defer wg.Done()
 
+	mux.Lock()
 	for i := 0; i < interval; i++ {
 		myMap[slice[i]]++
 	}
+	mux.Unlock()
+
+	return myMap
 }
 
-func countWords2(myMap map[string]int, interval int, slice []string, wg *sync.WaitGroup){
-	wg.Add(1)
+func countWords2(myMap map[string]int, interval int, slice []string, wg *sync.WaitGroup, mux *sync.Mutex) map[string]int{
+
 	defer wg.Done()
 
+	mux.Lock()
 	for i := interval; i < 2 * interval; i++ {
 		myMap[slice[i]]++
 	}
+	mux.Unlock()
+
+	return myMap
 }
 
-func countWords3(myMap map[string]int, interval int, slice []string, wg *sync.WaitGroup){
-	wg.Add(1)
+func countWords3(myMap map[string]int, interval int, slice []string, wg *sync.WaitGroup, mux *sync.Mutex) map[string]int{
 	defer wg.Done()
 
+	mux.Lock()
 	for i := 2 * interval; i < 3 * interval; i++ {
 		myMap[slice[i]]++
 	}
+	mux.Unlock()
+
+	return myMap
 }
+
 
 func toLowerText(text string) string{
 	 text = strings.ToLower(text)
 	 return text
 }
+
 
 func updateSlice(sl [][]string) []string{
 	newSlice := make([]string, 0)
